@@ -1,73 +1,26 @@
-import { Terminal } from 'lucide-react'
-import { useState } from 'react'
-import { useNavigation, type MetaFunction } from 'react-router'
-import { toast } from 'sonner'
-import { Alert, AlertDescription, AlertTitle } from '~/components/ui/alert'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Toaster } from '~/components/ui/sonner'
-import { DndContext } from '@dnd-kit/core'
+import type { Route } from './+types/home'
 
-export const meta: MetaFunction = () => [{ title: 'ToDo List' }]
-
-type Todo = {
-  id: number
-  title: string
-  completed: boolean
+export async function loader({ request }: Route.LoaderArgs) {
+  const searchParams = new URL(request.url).searchParams
+  const id = searchParams.get('id') ?? ''
+  return { id }
 }
 
-export default function Home() {
-  const [todoList, setTodoList] = useState<Todo[]>([])
-  const [todo, setToDo] = useState<string>('')
-  const navigation = useNavigation()
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  const result = await serverLoader()
+  return result
+}
 
-  const createTodo = () => {
-    if (!todo) {
-      toast.error('请输入内容', { position: 'top-center' })
-      return
-    }
+clientLoader.hydrate = true as const
 
-    setTodoList([...todoList, { id: Math.random(), title: todo, completed: false }])
-    setToDo('')
-  }
+export function action({ request }: Route.ActionArgs) {}
 
-  const handleCreateTodo = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-      createTodo()
-    }
-  }
+export function clientAction({ request }: Route.ClientActionArgs) {}
 
-  return (
-    <div className="flex flex-col items-center max-w-7xl mx-auto min-h-svh p-2 box-border">
-      <Toaster richColors closeButton />
+export function HydrateFallback() {
+  return <div>Loading...</div>
+}
 
-      <Alert>
-        <Terminal className="h-4 w-4" />
-        <AlertTitle>ToDo List!</AlertTitle>
-        <AlertDescription>You can add components and dependencies to your app using the cli.</AlertDescription>
-      </Alert>
-
-      <div className="w-full flex items-center gap-5 mt-5">
-        <Input
-          placeholder="请输入..."
-          onKeyDown={handleCreateTodo}
-          onChange={(e) => setToDo(e.currentTarget.value)}
-          value={todo}
-        />
-        <Button onClick={createTodo}>创建 ToDo</Button>
-      </div>
-
-      <div className="w-full flex flex-col mt-5">
-        <ul className="w-full flex flex-col gap-5">
-          <DndContext>
-            {todoList.map((todo, index) => (
-              <li key={todo.id}>
-                {index + 1}. {todo.title}
-              </li>
-            ))}
-          </DndContext>
-        </ul>
-      </div>
-    </div>
-  )
+export default function Page({ loaderData }: Route.ComponentProps) {
+  return <div>Home: {loaderData.id}</div>
 }
